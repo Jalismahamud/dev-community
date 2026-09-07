@@ -65,3 +65,15 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 # dev-community
+
+## Project Foundation
+
+- Date and time output uses `format_datetime()` and the `Carbon::formatDhaka()` macro.
+- Amounts use `format_money()` in BDT with lakh/crore grouping. Vue uses `resources/js/utils/formatMoney.js`.
+- Images go through `App\Services\ImageService` and are always stored as WebP on the public disk.
+- Shared email and PDF layouts live under `resources/views/emails/layout.blade.php` and `resources/views/pdf/layout.blade.php`.
+- `App\Services\SmsService` reads `SMS_API_URL`, `SMS_API_KEY`, and `SMS_SENDER_ID` from the environment.
+
+## Migration Discipline
+
+Before creating a migration, check whether the table's original create migration is still local or staging-only. Edit that original migration and run `migrate:fresh` while the table has not shipped to production. Create an add-column migration only for a production-migrated table or a genuinely new table.
