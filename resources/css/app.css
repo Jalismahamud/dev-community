@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -10,3 +11,13 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+:root { color-scheme: dark; font-family: 'Inter', sans-serif; background: #10141a; color: #e6e6e6; }
+* { box-sizing: border-box; }
+body { min-width: 320px; margin: 0; background: #10141a; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+.surface { border: 1px solid #232a34; border-radius: 8px; background: #161b22; }
+.amber-focus:focus { outline: 1px solid #f5a623; box-shadow: 0 0 0 3px #f5a62322; }
+.tag-chip { border: 1px solid #0fa3b1; border-radius: 999px; color: #53d2de; font-family: 'JetBrains Mono', monospace; }
+.prose-community pre { overflow-x: auto; border: 1px solid #232a34; border-radius: 6px; background: #0d1117; padding: 14px; font-family: 'JetBrains Mono', monospace; }
+.prose-community code { color: #f5a623; font-family: 'JetBrains Mono', monospace; }
