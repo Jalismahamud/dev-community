@@ -12,9 +12,34 @@ class Message extends Model
 {
     use HasFactory, TracksActivity;
 
-    protected $fillable = ['conversation_id', 'sender_id', 'body', 'read_at'];
+    protected $fillable = [
+        'conversation_id',
+        'sender_id',
+        'body',
+        'attachment_path',
+        'attachment_type',
+        'attachment_name',
+        'attachment_size',
+        'read_at',
+    ];
 
-    protected $casts = ['read_at' => 'datetime'];
+    protected $casts = [
+        'read_at' => 'datetime',
+        'attachment_size' => 'integer',
+    ];
+
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        if (! $this->attachment_path) {
+            return null;
+        }
+
+        return str_starts_with($this->attachment_path, 'http')
+            ? $this->attachment_path
+            : asset('storage/' . $this->attachment_path);
+    }
 
     public function conversation(): BelongsTo
     {

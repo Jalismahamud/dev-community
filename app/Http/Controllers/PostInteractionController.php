@@ -6,8 +6,10 @@ use App\Http\Requests\StoreCommentRequest;
 use App\Http\Requests\UpdateCommentRequest;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Services\BookmarkService;
 use App\Services\CommentService;
 use App\Services\LikeService;
+use App\Services\ShareService;
 use App\Traits\ApiResponse;
 
 class PostInteractionController extends Controller
@@ -16,6 +18,8 @@ class PostInteractionController extends Controller
 
     public function like(Post $post, LikeService $likes) { return $this->success(['liked' => $likes->togglePost(request()->user(), $post), 'likes_count' => $post->fresh()->likes_count]); }
     public function likeComment(Comment $comment, LikeService $likes) { return $this->success(['liked' => $likes->toggleComment(request()->user(), $comment), 'likes_count' => $comment->fresh()->likes_count]); }
+    public function share(Post $post, ShareService $shares) { return $this->success(['shared' => $shares->toggle(request()->user(), $post, request()->input('quote_body')), 'shares_count' => $post->fresh()->shares_count]); }
+    public function bookmark(Post $post, BookmarkService $bookmarks) { return $this->success(['bookmarked' => $bookmarks->toggle(request()->user(), $post)]); }
     public function comment(StoreCommentRequest $request, Post $post, CommentService $comments) { return $this->success(new \App\Http\Resources\CommentResource($comments->create($request->user(), $post, $request->validated())), 'Comment posted.', 201); }
 
     public function updateComment(UpdateCommentRequest $request, Comment $comment)

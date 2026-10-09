@@ -15,6 +15,14 @@ class AuthController extends Controller
 
     public function registerForm() { return Inertia::render('Auth/Register'); }
     public function loginForm() { return Inertia::render('Auth/Login'); }
+    public function forgotPasswordForm() { return Inertia::render('Auth/ForgotPassword'); }
+
+    public function forgotPassword(\Illuminate\Http\Request $request)
+    {
+        $request->validate(['email' => ['required', 'email']]);
+
+        return back()->with('status', 'If your email is registered, we have sent a password reset link.');
+    }
 
     public function register(RegisterRequest $request)
     {

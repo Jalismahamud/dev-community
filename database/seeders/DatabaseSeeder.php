@@ -6,6 +6,9 @@ use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+require_once __DIR__ . '/TechTagSeeder.php';
+require_once __DIR__ . '/ProductionCommunitySeeder.php';
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -13,11 +16,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(ProductionCommunitySeeder::class);
     }
 }

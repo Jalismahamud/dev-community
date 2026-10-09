@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
+use App\Models\Post;
 use App\Services\PostService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -15,9 +17,41 @@ class FeedController extends Controller
 
     public function index(Request $request, PostService $posts)
     {
-        $feed = $posts->feed($request->user(), $request->string('view', 'all')->toString());
+        $view = $request->string('view', 'all')->toString();
+        $feed = $posts->feed($request->user(), $view);
 
-        return Inertia::render('Feed', ['posts' => PostResource::collection($feed), 'view' => $request->string('view', 'all')->toString()]);
+        $trendingPosts = Post::query()
+            ->with('user:id,name,username,avatar_path')
+            ->orderByRaw('(views_count + (likes_count * 2) + (comments_count * 3) + (shares_count * 4)) DESC')
+            ->limit(5)
+            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at']);
+
+        $mostViewedPosts = Post::query()
+            ->with('user:id,name,username,avatar_path')
+            ->orderByDesc('views_count')
+            ->limit(5)
+            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at']);
+
+        $topCreators = \App\Models\User::query()
+            ->withCount('posts')
+            ->orderByDesc('posts_count')
+            ->limit(5)
+            ->get(['id', 'name', 'username', 'avatar_path', 'current_status']);
+
+        $popularTags = \App\Models\TechTag::query()
+            ->withCount('posts')
+            ->orderByDesc('posts_count')
+            ->limit(8)
+            ->get(['id', 'name', 'slug', 'color_hex']);
+
+        return Inertia::render('Feed', [
+            'posts' => PostResource::collection($feed),
+            'view' => $view,
+            'trendingPosts' => $trendingPosts,
+            'mostViewedPosts' => $mostViewedPosts,
+            'topCreators' => $topCreators,
+            'popularTags' => $popularTags,
+        ]);
     }
 
     public function store(StorePostRequest $request, PostService $posts)
@@ -26,5 +60,37 @@ class FeedController extends Controller
         $post = $posts->create($request->user(), $data, $request->file('images', []));
 
         return $this->success(new PostResource($post), 'Post published.', 201);
+    }
+
+    public function update(UpdatePostRequest $request, Post $post, PostService $posts)
+    {
+        $updated = $posts->update($post, $request->validated());
+
+        return $this->success(new PostResource($updated), 'Post updated.');
+    }
+
+    public function destroy(Post $post, PostService $posts)
+    {
+        abort_unless(request()->user()?->id === $post->user_id, 403);
+        $posts->delete($post);
+
+        return $this->success(null, 'Post deleted.');
+    }
+
+    public function show(Post $post)
+    {
+        $post->increment('views_count');
+        $post->load(['user', 'tags', 'images', 'comments.user']);
+
+        return Inertia::render('PostShow', [
+            'post' => new PostResource($post),
+        ]);
+    }
+
+    public function impression(Post $post)
+    {
+        $post->increment('views_count');
+
+        return $this->success(['views_count' => $post->views_count], 'Impression recorded.');
     }
 }

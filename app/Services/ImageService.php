@@ -11,27 +11,25 @@ class ImageService
 {
     public function uploadImage(UploadedFile $file, string $folder, ?int $width = null, ?int $height = null): string
     {
-        $image = (new ImageManager(new Driver()))->read($file->getRealPath());
+        if ($height !== null) {
+            $image = (new ImageManager(new Driver()))->read($file->getRealPath());
+            if ($width !== null) {
+                $image->resize($width, $height);
+            } else {
+                $image->scaleDown(height: $height);
+            }
+            $path = trim($folder, '/') . '/' . str()->uuid() . '.webp';
+            Storage::disk('public')->put($path, (string) $image->toWebp(80));
 
-        if ($width !== null && $height !== null) {
-            $image->resize($width, $height);
-        } elseif ($width !== null) {
-            $image->scaleDown(width: $width);
-        } elseif ($height !== null) {
-            $image->scaleDown(height: $height);
+            return $path;
         }
 
-        $path = trim($folder, '/') . '/' . str()->uuid() . '.webp';
-        Storage::disk('public')->put($path, (string) $image->toWebp(85));
-
-        return $path;
+        return compress_to_webp($file, $folder, $width ?? 1600, 80);
     }
 
     public function deleteImage(?string $path): void
     {
-        if ($path !== null && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
-        }
+        delete_media($path);
     }
 
     public function replaceImage(UploadedFile $file, ?string $oldPath, string $folder): string
