@@ -41,7 +41,7 @@ const heroCards = [
     },
 ];
 
-const techPills = ['Laravel 11', 'Vue 3', 'Inertia.js', 'WebSockets', 'Reverb', 'TailwindCSS', 'WebP Storage', 'MySQL', 'Docker'];
+const techPills = ['Laravel 12', 'Vue 3', 'Inertia.js', 'WebSockets', 'Pusher', 'TailwindCSS', 'WebP Storage', 'MySQL', 'Docker'];
 </script>
 
 <template>

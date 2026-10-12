@@ -8,19 +8,20 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 try {
-	const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-	if (reverbKey) {
-		const isHttps = (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https';
+	const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+	if (pusherKey) {
+		const isHttps = (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https';
 		window.Echo = new Echo({
-			broadcaster: 'reverb',
-			key: reverbKey,
-			wsHost: import.meta.env.VITE_REVERB_HOST ?? '127.0.0.1',
-			wsPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
-			wssPort: Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+			broadcaster: 'pusher',
+			key: pusherKey,
+			cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
+			wsHost: import.meta.env.VITE_PUSHER_HOST || undefined,
+			wsPort: import.meta.env.VITE_PUSHER_PORT ? Number(import.meta.env.VITE_PUSHER_PORT) : undefined,
+			wssPort: import.meta.env.VITE_PUSHER_PORT ? Number(import.meta.env.VITE_PUSHER_PORT) : undefined,
 			forceTLS: isHttps,
-			enabledTransports: isHttps ? ['wss'] : ['ws'],
+			enabledTransports: isHttps ? ['wss', 'ws'] : ['ws', 'wss'],
 		});
 	}
 } catch (e) {
-	console.warn('Reverb initialization skipped:', e);
+	console.warn('Echo initialization skipped:', e);
 }

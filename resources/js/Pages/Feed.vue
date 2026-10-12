@@ -670,7 +670,7 @@ function mediaUrl(path) {
                 <div class="rounded-2xl border border-[#1E253A] bg-[#111526] p-4 space-y-2">
                     <div class="flex items-center gap-2 text-xs font-semibold text-white">
                         <i class="fa-solid fa-circle text-[8px] text-emerald-400 animate-pulse"></i>
-                        <span>Reverb Realtime Engine</span>
+                        <span>Pusher Realtime Engine</span>
                     </div>
                     <p class="text-[11px] text-[#64748B] leading-5">
                         WebSockets: <span class="text-emerald-400 font-semibold">Connected & Synced</span>
