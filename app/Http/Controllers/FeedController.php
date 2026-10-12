@@ -9,6 +9,7 @@ use App\Models\Post;
 use App\Services\PostService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class FeedController extends Controller
@@ -20,29 +21,33 @@ class FeedController extends Controller
         $view = $request->string('view', 'all')->toString();
         $feed = $posts->feed($request->user(), $view);
 
-        $trendingPosts = Post::query()
+        $trendingPosts = Cache::remember('feed_trending_posts', 300, fn () => Post::query()
             ->with('user:id,name,username,avatar_path')
             ->orderByRaw('(views_count + (likes_count * 2) + (comments_count * 3) + (shares_count * 4)) DESC')
             ->limit(5)
-            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at']);
+            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at'])
+        );
 
-        $mostViewedPosts = Post::query()
+        $mostViewedPosts = Cache::remember('feed_most_viewed_posts', 300, fn () => Post::query()
             ->with('user:id,name,username,avatar_path')
             ->orderByDesc('views_count')
             ->limit(5)
-            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at']);
+            ->get(['id', 'code', 'slug', 'title', 'views_count', 'likes_count', 'comments_count', 'user_id', 'created_at'])
+        );
 
-        $topCreators = \App\Models\User::query()
+        $topCreators = Cache::remember('feed_top_creators', 600, fn () => \App\Models\User::query()
             ->withCount('posts')
             ->orderByDesc('posts_count')
             ->limit(5)
-            ->get(['id', 'name', 'username', 'avatar_path', 'current_status']);
+            ->get(['id', 'name', 'username', 'avatar_path', 'current_status'])
+        );
 
-        $popularTags = \App\Models\TechTag::query()
+        $popularTags = Cache::remember('feed_popular_tags', 600, fn () => \App\Models\TechTag::query()
             ->withCount('posts')
             ->orderByDesc('posts_count')
             ->limit(8)
-            ->get(['id', 'name', 'slug', 'color_hex']);
+            ->get(['id', 'name', 'slug', 'color_hex'])
+        );
 
         return Inertia::render('Feed', [
             'posts' => PostResource::collection($feed),
@@ -80,6 +85,16 @@ class FeedController extends Controller
     public function show(Post $post)
     {
         $post->increment('views_count');
+
+        $user = request()->user();
+        if ($user) {
+            $post->loadExists([
+                'likes as is_liked' => fn ($q) => $q->where('user_id', $user->id),
+                'shares as is_shared' => fn ($q) => $q->where('user_id', $user->id),
+                'bookmarks as is_bookmarked' => fn ($q) => $q->where('user_id', $user->id),
+            ]);
+        }
+
         $post->load(['user', 'tags', 'images', 'comments.user']);
 
         return Inertia::render('PostShow', [

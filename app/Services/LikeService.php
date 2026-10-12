@@ -34,6 +34,8 @@ class LikeService
                 $post->user->notify(new CommunityNotification('post_liked', ['post_id' => $post->id, 'actor_id' => $user->id, 'message' => $user->name . ' liked your post.']));
             }
 
+            \Illuminate\Support\Facades\Cache::forget('feed_trending_posts');
+
             return $liked;
         });
     }

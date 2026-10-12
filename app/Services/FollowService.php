@@ -15,11 +15,13 @@ class FollowService
 
         if ($follow) {
             $follow->delete();
+            \Illuminate\Support\Facades\Cache::forget('feed_top_creators');
 
             return false;
         }
 
         Follow::create(['follower_id' => $follower->id, 'following_id' => $following->id]);
+        \Illuminate\Support\Facades\Cache::forget('feed_top_creators');
         $following->notify(new CommunityNotification('followed', ['actor_id' => $follower->id, 'message' => $follower->name . ' followed you.']));
 
         return true;

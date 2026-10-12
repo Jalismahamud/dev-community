@@ -27,6 +27,7 @@ class CommentService
         });
 
         CommentPosted::dispatch($comment);
+        \Illuminate\Support\Facades\Cache::forget('feed_trending_posts');
 
         if (! $post->user->is($user)) {
             $post->user->notify(new CommunityNotification('comment_posted', ['post_id' => $post->id, 'comment_id' => $comment->id, 'actor_id' => $user->id, 'message' => $user->name . ' commented on your post.']));

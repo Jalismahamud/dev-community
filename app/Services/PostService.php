@@ -6,6 +6,7 @@ use App\Events\PostCreated;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class PostService
@@ -35,6 +36,7 @@ class PostService
             return $post->load(['user', 'tags', 'images']);
         });
 
+        $this->clearFeedCache();
         PostCreated::dispatch($post);
 
         return $post;
@@ -42,7 +44,7 @@ class PostService
 
     public function update(Post $post, array $data): Post
     {
-        return DB::transaction(function () use ($post, $data): Post {
+        $updated = DB::transaction(function () use ($post, $data): Post {
             $post->update([
                 'title' => $data['title'] ?? null,
                 'body_markdown' => $data['body_markdown'],
@@ -54,6 +56,10 @@ class PostService
 
             return $post->load(['user', 'tags', 'images']);
         });
+
+        $this->clearFeedCache();
+
+        return $updated;
     }
 
     public function delete(Post $post): void
@@ -64,16 +70,26 @@ class PostService
             }
             $post->delete();
         });
+
+        $this->clearFeedCache();
     }
 
     public function feed(User $user, string $view = 'all')
     {
         $query = Post::query()->with(['user', 'tags', 'images', 'comments.user']);
 
+        if ($user) {
+            $query->withExists([
+                'likes as is_liked' => fn ($q) => $q->where('user_id', $user->id),
+                'shares as is_shared' => fn ($q) => $q->where('user_id', $user->id),
+                'bookmarks as is_bookmarked' => fn ($q) => $q->where('user_id', $user->id),
+            ]);
+        }
+
         match ($view) {
-            'following' => $query->whereIn('user_id', $user->following()->select('users.id'))->latest('posts.created_at'),
-            'my-stack' => $query->whereHas('tags', fn ($tags) => $tags->whereIn('tech_tags.id', $user->techTags()->select('tech_tags.id')))->latest('posts.created_at'),
-            'bookmarks' => $query->whereIn('posts.id', $user->bookmarks()->select('post_id'))->latest('posts.created_at'),
+            'following' => $query->whereIn('user_id', DB::table('follows')->where('follower_id', $user->id)->select('following_id'))->latest('posts.created_at'),
+            'my-stack' => $query->whereHas('tags', fn ($tags) => $tags->whereIn('tech_tags.id', DB::table('user_tech_tag')->where('user_id', $user->id)->select('tech_tag_id')))->latest('posts.created_at'),
+            'bookmarks' => $query->whereIn('posts.id', DB::table('bookmarks')->where('user_id', $user->id)->select('post_id'))->latest('posts.created_at'),
             'today' => $query->whereDate('posts.created_at', now()->today())->latest('posts.created_at'),
             'most-viewed', 'most_viewed' => $query->orderByDesc('views_count'),
             'trending', 'popular' => $query->orderByRaw('(views_count + (likes_count * 2) + (comments_count * 3) + (shares_count * 4)) DESC'),
@@ -81,5 +97,13 @@ class PostService
         };
 
         return $query->cursorPaginate(12)->withQueryString();
+    }
+
+    public function clearFeedCache(): void
+    {
+        Cache::forget('feed_trending_posts');
+        Cache::forget('feed_most_viewed_posts');
+        Cache::forget('feed_top_creators');
+        Cache::forget('feed_popular_tags');
     }
 }

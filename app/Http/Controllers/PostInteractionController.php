@@ -31,7 +31,10 @@ class PostInteractionController extends Controller
 
     public function deleteComment(UpdateCommentRequest $request, Comment $comment)
     {
+        $post = $comment->post;
         $comment->delete();
+        $post?->decrement('comments_count');
+        \Illuminate\Support\Facades\Cache::forget('feed_trending_posts');
 
         return $this->success(null, 'Comment deleted.');
     }

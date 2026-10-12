@@ -204,8 +204,8 @@ class ProductionCommunitySeeder extends Seeder
         }
 
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $defaultPassword = Hash::make('password');
 
-        // Insert or update users
         $createdUsers = [];
         foreach ($developers as $devData) {
             $userTags = $devData['tags'];
@@ -215,7 +215,7 @@ class ProductionCommunitySeeder extends Seeder
                 ['email' => $devData['email']],
                 array_merge($devData, [
                     'username' => explode('@', $devData['email'])[0],
-                    'password' => Hash::make('password'),
+                    'password' => $defaultPassword,
                     'email_verified_at' => Carbon::now()->subDays(rand(10, 100)),
                 ])
             );
@@ -643,5 +643,7 @@ class ProductionCommunitySeeder extends Seeder
                 'updated_at' => Carbon::now()->subHours(6),
             ]);
         }
+
+        \Illuminate\Support\Facades\Cache::flush();
     }
 }

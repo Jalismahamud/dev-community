@@ -39,6 +39,8 @@ class ShareService
                 ]));
             }
 
+            \Illuminate\Support\Facades\Cache::forget('feed_trending_posts');
+
             return $shared;
         });
     }

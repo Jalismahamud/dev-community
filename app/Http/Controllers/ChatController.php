@@ -19,10 +19,15 @@ class ChatController extends Controller
         $user = request()->user();
         $conversations = $user->conversations()
             ->with([
-                'participants',
-                'messages' => fn ($query) => $query->with('sender')->latest()->limit(1),
+                'participants:id,name,username,avatar_path,current_status',
+                'latestMessage.sender:id,name,username,avatar_path',
             ])
+            ->latest('conversations.updated_at')
             ->get();
+
+        foreach ($conversations as $conv) {
+            $conv->setRelation('messages', $conv->latestMessage ? collect([$conv->latestMessage]) : collect());
+        }
 
         $activeConversationId = request()->query('conversation') 
             ?? $conversations->first()?->id;
@@ -32,7 +37,7 @@ class ChatController extends Controller
             $activeConv = $conversations->firstWhere('id', (int) $activeConversationId);
             if ($activeConv) {
                 $initialMessages = MessageResource::collection(
-                    $activeConv->messages()->with('sender')->oldest()->get()
+                    $activeConv->messages()->with('sender:id,name,username,avatar_path')->oldest()->get()
                 );
             }
         }
@@ -50,7 +55,7 @@ class ChatController extends Controller
 
         return $this->success(
             MessageResource::collection(
-                $conversation->messages()->with('sender')->oldest()->get()
+                $conversation->messages()->with('sender:id,name,username,avatar_path')->oldest()->get()
             )
         );
     }

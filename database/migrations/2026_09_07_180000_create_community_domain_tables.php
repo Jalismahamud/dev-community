@@ -18,25 +18,34 @@ return new class extends Migration
 
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
+            $table->string('code', 32)->nullable()->unique();
+            $table->string('slug')->nullable()->index();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('title')->nullable();
             $table->longText('body_markdown');
             $table->unsignedInteger('likes_count')->default(0);
             $table->unsignedInteger('comments_count')->default(0);
+            $table->unsignedInteger('shares_count')->default(0);
+            $table->unsignedBigInteger('views_count')->default(0);
             $table->timestamps();
             $table->index('created_at');
+            $table->index(['user_id', 'created_at']);
+            $table->index('views_count');
+            $table->index(['views_count', 'created_at']);
         });
 
         Schema::create('user_tech_tag', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('tech_tag_id')->constrained()->cascadeOnDelete();
             $table->primary(['user_id', 'tech_tag_id']);
+            $table->index('tech_tag_id');
         });
 
         Schema::create('post_tag', function (Blueprint $table) {
             $table->foreignId('post_id')->constrained()->cascadeOnDelete();
             $table->foreignId('tech_tag_id')->constrained()->cascadeOnDelete();
             $table->primary(['post_id', 'tech_tag_id']);
+            $table->index('tech_tag_id');
         });
 
         Schema::create('post_images', function (Blueprint $table) {
@@ -56,6 +65,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->unique(['post_id', 'user_id']);
+            $table->index('user_id');
         });
 
         Schema::create('comments', function (Blueprint $table) {
@@ -70,6 +80,8 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
             $table->index(['post_id', 'parent_id']);
+            $table->index(['post_id', 'created_at']);
+            $table->index('user_id');
         });
 
         Schema::create('comment_likes', function (Blueprint $table) {
@@ -78,6 +90,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->unique(['comment_id', 'user_id']);
+            $table->index('user_id');
         });
 
         Schema::create('follows', function (Blueprint $table) {
@@ -93,6 +106,7 @@ return new class extends Migration
             $table->id();
             $table->string('type')->default('private');
             $table->timestamps();
+            $table->index('updated_at');
         });
 
         Schema::create('conversation_participants', function (Blueprint $table) {
@@ -101,16 +115,23 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamp('joined_at')->useCurrent();
             $table->unique(['conversation_id', 'user_id']);
+            $table->index('user_id');
         });
 
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
             $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
-            $table->text('body');
+            $table->text('body')->nullable();
+            $table->string('attachment_path')->nullable();
+            $table->string('attachment_type')->nullable();
+            $table->string('attachment_name')->nullable();
+            $table->unsignedBigInteger('attachment_size')->nullable();
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
             $table->index(['conversation_id', 'created_at']);
+            $table->index(['conversation_id', 'read_at']);
+            $table->index('sender_id');
         });
 
         Schema::create('reports', function (Blueprint $table) {
@@ -124,6 +145,9 @@ return new class extends Migration
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
             $table->index(['status', 'created_at']);
+            $table->index('reporter_id');
+            $table->index('post_id');
+            $table->index('comment_id');
         });
 
         Schema::create('notifications', function (Blueprint $table) {
@@ -133,6 +157,8 @@ return new class extends Migration
             $table->text('data');
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
+            $table->index(['notifiable_type', 'notifiable_id', 'created_at']);
+            $table->index(['notifiable_type', 'notifiable_id', 'read_at']);
         });
     }
 

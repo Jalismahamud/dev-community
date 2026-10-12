@@ -107,7 +107,10 @@ class User extends Authenticatable implements FilamentUser
     public function getProfileCompletionAttribute(): int
     {
         $fields = [$this->avatar_path, $this->bio, $this->github_url, $this->linkedin_url, $this->current_status];
-        $completed = count(array_filter($fields)) + ($this->techTags()->exists() ? 1 : 0);
+        $hasTechTags = $this->relationLoaded('techTags')
+            ? $this->techTags->isNotEmpty()
+            : \Illuminate\Support\Facades\Cache::remember('user_' . $this->id . '_has_tags', 3600, fn () => $this->techTags()->exists());
+        $completed = count(array_filter($fields)) + ($hasTechTags ? 1 : 0);
 
         return (int) round(($completed / 6) * 100);
     }
